@@ -1,1351 +1,223 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>传说之下：毒师宇宙 (UNDERTALE: HEISENBERG) v1.0 测试版</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        body {
-            background-color: #050505;
-            color: #fff;
-            font-family: 'Courier New', 'SimHei', 'Microsoft YaHei', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        #game-frame {
-            position: relative;
-            width: 640px;
-            height: 480px;
-            background: #000;
-            border: 4px solid #333;
-            box-shadow: 0 0 30px rgba(0, 255, 128, 0.2), inset 0 0 20px rgba(0,0,0,0.8);
-        }
-        canvas {
-            display: block;
-            width: 640px;
-            height: 480px;
-            image-rendering: pixelated;
-        }
-        /* 移动端虚拟按键 */
-        #touch-controls {
-            display: none;
-            width: 640px;
-            max-width: 100vw;
-            margin-top: 10px;
-            justify-content: space-between;
-            padding: 0 10px;
-        }
-        .dpad {
-            display: grid;
-            grid-template-columns: repeat(3, 45px);
-            grid-template-rows: repeat(3, 45px);
-            gap: 4px;
-        }
-        .action-btns {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        .t-btn {
-            background: #222;
-            border: 2px solid #555;
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
-        .t-btn:active, .t-btn.active {
-            background: #00ffaa;
-            color: #000;
-            border-color: #fff;
-        }
-        .t-btn-round {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%;
-        }
-        #debug-bar {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #777;
-            display: flex;
-            gap: 15px;
-        }
-        .tip-tag {
-            color: #00ffcc;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#050505">
+  <title>传说之下：毒师宇宙 v1.0</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Courier New", "Microsoft YaHei", monospace;
+      background: #050505;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: #050505;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+      color: #fff;
+    }
+
+    #app {
+      display: flex;
+      width: min(100%, 640px);
+      max-height: 100%;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #gameContainer {
+      position: relative;
+      width: min(640px, 100%);
+      aspect-ratio: 4 / 3;
+      flex: 0 1 auto;
+      overflow: hidden;
+      border: 3px solid #444;
+      background: #000;
+      box-shadow: 0 0 24px rgba(0, 255, 136, 0.12);
+    }
+
+    #game {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      touch-action: none;
+    }
+
+    #touchControls {
+      display: none;
+      width: min(640px, 100%);
+      min-height: 142px;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 6px;
+      touch-action: none;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template: repeat(3, 44px) / repeat(3, 44px);
+      gap: 3px;
+      flex: 0 0 auto;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(3, 52px);
+      align-items: center;
+      gap: 9px;
+      flex: 0 0 auto;
+    }
+
+    .control {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border: 2px solid #666;
+      border-radius: 6px;
+      background: #191919;
+      color: #fff;
+      font: 700 20px/1 "Courier New", monospace;
+      touch-action: none;
+    }
+
+    .control.action {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      font-size: 18px;
+    }
+
+    .control[data-key="confirm"] { border-color: #e65050; }
+    .control[data-key="cancel"] { border-color: #4f9ee8; }
+    .control[data-key="menu"] { border-color: #d3bd40; }
+
+    .control.active {
+      border-color: #fff;
+      background: #00c978;
+      color: #000;
+    }
+
+    #tbUp { grid-area: 1 / 2; }
+    #tbLeft { grid-area: 2 / 1; }
+    #tbRight { grid-area: 2 / 3; }
+    #tbDown { grid-area: 3 / 2; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (hover: none), (pointer: coarse) {
+      #touchControls { display: flex; }
+      #gameContainer {
+        width: min(640px, 100%, calc((100dvh - 166px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 4 / 3));
+      }
+    }
+
+    @media (hover: none) and (pointer: coarse) and (orientation: landscape) {
+      body { padding: max(4px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); }
+      #app {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        flex-direction: row;
+        justify-content: center;
+        gap: 12px;
+      }
+      #gameContainer {
+        width: min(calc(100vw - 352px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc((100dvh - 8px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 4 / 3), 640px);
+      }
+      #touchControls {
+        display: contents;
+      }
+      .dpad,
+      .actions {
+        position: fixed;
+        top: 50%;
+        z-index: 2;
+        transform: translateY(-50%);
+      }
+      .dpad { left: max(10px, env(safe-area-inset-left)); }
+      .actions {
+        right: max(10px, env(safe-area-inset-right));
+        grid-template: repeat(3, 50px) / 50px;
+      }
+      .control.action { width: 50px; height: 50px; }
+    }
+
+    @media (max-width: 390px) and (orientation: portrait) {
+      #touchControls { min-height: 126px; gap: 10px; padding: 0; }
+      .dpad { grid-template: repeat(3, 39px) / repeat(3, 39px); gap: 2px; }
+      .control { width: 39px; height: 39px; }
+      .actions { grid-template-columns: repeat(3, 46px); gap: 6px; }
+      .control.action { width: 46px; height: 46px; font-size: 16px; }
+      #gameContainer { width: min(640px, 100%, calc((100dvh - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 4 / 3)); }
+    }
+  </style>
 </head>
 <body>
-    <div id="game-frame">
-        <canvas id="cvs" width="640" height="480"></canvas>
-    </div>
-    
-    <div id="touch-controls">
-        <div class="dpad">
-            <div></div>
-            <button class="t-btn" id="btn-up">▲</button>
-            <div></div>
-            <button class="t-btn" id="btn-left">◀</button>
-            <div></div>
-            <button class="t-btn" id="btn-right">▶</button>
-            <div></div>
-            <button class="t-btn" id="btn-down">▼</button>
-            <div></div>
-        </div>
-        <div class="action-btns">
-            <button class="t-btn t-btn-round" id="btn-z" style="border-color:#ff5555;">Z<br><span style="font-size:10px;">确定</span></button>
-            <button class="t-btn t-btn-round" id="btn-x" style="border-color:#55aaff;">X<br><span style="font-size:10px;">取消</span></button>
-            <button class="t-btn t-btn-round" id="btn-c" style="border-color:#ffff55;">C<br><span style="font-size:10px;">彩蛋</span></button>
-        </div>
+  <main id="app">
+    <div id="gameContainer">
+      <canvas id="game" width="640" height="480" aria-label="传说之下：毒师宇宙游戏画面"></canvas>
     </div>
 
-    <div id="debug-bar">
-        <span>[Z/Enter] 确认/对话</span>
-        <span>[X/Shift] 取消/减速</span>
-        <span>[C] 触发随机毒师彩蛋</span>
-        <span>方向键/WASD 移动</span>
-    </div>
-
-<script>
-// ==================== 音效合成器 (Web Audio API) ====================
-class SoundSynth {
-    constructor() {
-        this.ctx = null;
-        this.bgmTimer = null;
-        this.bgmStep = 0;
-        this.bgmPlaying = false;
-    }
-    init() {
-        if (!this.ctx) {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            this.ctx = new AudioCtx();
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
-    }
-    playTone(freq, type = 'square', dur = 0.08, vol = 0.15) {
-        if (!this.ctx) return;
-        try {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + dur);
-        } catch(e) {}
-    }
-    textBeep(pitch = 220) {
-        this.init();
-        this.playTone(pitch + (Math.random()*40-20), 'square', 0.04, 0.08);
-    }
-    select() {
-        this.init();
-        this.playTone(440, 'triangle', 0.05, 0.15);
-    }
-    confirm() {
-        this.init();
-        this.playTone(587.33, 'square', 0.08, 0.2);
-        setTimeout(() => this.playTone(880, 'square', 0.12, 0.2), 60);
-    }
-    hit() {
-        this.init();
-        if (!this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(160, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.25);
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.25);
-    }
-    slash() {
-        this.init();
-        this.playTone(800, 'sawtooth', 0.06, 0.25);
-        setTimeout(() => this.playTone(300, 'sawtooth', 0.15, 0.3), 50);
-    }
-    startBGM(theme = 'heisenberg') {
-        this.init();
-        if (this.bgmPlaying) return;
-        this.bgmPlaying = true;
-        this.bgmStep = 0;
-        
-        // 极简 8-bit BGM 循循环 (毒师主旋律致敬 Undertale 节奏)
-        const bassLine = [110, 110, 130.81, 110, 146.83, 138.59, 110, 123.47]; // A2 C3 A2 D3 C#3 A2 B2
-        const melody = [220, 0, 261.63, 293.66, 329.63, 0, 311.13, 293.66];
-        
-        this.bgmTimer = setInterval(() => {
-            if (!this.bgmPlaying || !this.ctx) return;
-            const t = this.ctx.currentTime;
-            const bNote = bassLine[this.bgmStep % bassLine.length];
-            const mNote = melody[this.bgmStep % melody.length];
-            
-            if (bNote > 0) {
-                this.playTone(bNote, 'triangle', 0.15, 0.12);
-            }
-            if (mNote > 0 && Math.random() > 0.2) {
-                this.playTone(mNote, 'square', 0.12, 0.08);
-            }
-            this.bgmStep++;
-        }, 180);
-    }
-    stopBGM() {
-        this.bgmPlaying = false;
-        if (this.bgmTimer) clearInterval(this.bgmTimer);
-    }
-}
-const audio = new SoundSynth();
-
-// ==================== 角色 & 台词 & 彩蛋库 ====================
-const ROSTER = {
-    walter: {
-        id: 'walter',
-        name: '老白 (Walter White)',
-        alias: '海森堡 / 绝命毒师',
-        hp: 500, maxHp: 500,
-        atk: 10, def: 8,
-        color: '#00ff88',
-        title: '99.1% 纯度炼金术士',
-        dialogues: [
-            "Skyler，你根本不知道你在和谁说话。",
-            "谁会开门中枪？不是我！我才是那个去敲门的人！(I am the one who knocks!)",
-            "看着我的眼睛，说出我的名字。(Say my name.)",
-            "这是化学，也是无可争议的艺术。",
-            "滚出我的地盘。(Stay out of my territory.)",
-            "你知道我这辈子最后悔的是什么吗？妥协。"
-        ],
-        acts: [
-            { name: '查看', desc: '老白 - ATK 10 DEF 8。一个身患绝症的高中化学老师，但全身散发着令人窒息的杀气。' },
-            { name: '说出名字', desc: '你深吸一口气，大声喊道：“海森堡！”
-老白扶了扶眼镜，嘴角扬起：“你他妈说得对极了。(You are goddamn right.)” 老白攻击力下降！', effect: 'weaken' },
-            { name: '讨论化学', desc: '你指出手性分子在结晶中的对称破缺问题。老白双眼放光，忍不住开始滔滔不绝讲课。饶恕条件增加！', effect: 'spare_up' },
-            { name: '递试管', desc: '你递过去一支标准硼硅酸盐玻璃试管。老白满意地检查了洁净度。', effect: 'spare_up' }
-        ]
-    },
-    jesse: {
-        id: 'jesse',
-        name: '小粉 (Jesse Pinkman)',
-        alias: 'CAPN COOK',
-        hp: 350, maxHp: 350,
-        atk: 7, def: 4,
-        color: '#ffcc00',
-        title: '街头饶舌学徒',
-        dialogues: [
-            "Yo, Mr. White! 我们的反应釜怎么又冒烟了, BITCH!",
-            "科学，BITCH! 磁铁，BITCH! (Yeah science, bitch!)",
-            "你以为你很硬吗？去问问街上谁罩着这里的！",
-            "老白总是骂我，但这次我要证明我自己，Yo！",
-            "别拿那个红心晃来晃去，我眼晕，Bitch!"
-        ],
-        acts: [
-            { name: '查看', desc: '小粉 - ATK 7 DEF 4。穿着大号连帽衫，情绪激动，但其实内心深处渴望被认可。' },
-            { name: '喊出科学', desc: '你高举双臂大喊：“YEAH SCIENCE, BITCH!”
-小粉愣住了，兴奋地跟你击掌：“YO！你很懂行嘛！”', effect: 'spare_up' },
-            { name: '送木盒子', desc: '你拿出了在木工课上精心打磨的木盒。小粉眼眶湿润了：“这是我做过最好的东西...” 防御归零！', effect: 'spare_max' },
-            { name: 'Freestyle', desc: '你当场来了一段双押 Rap。小粉跟着律动点头，完全忘记了攻击！', effect: 'spare_up' }
-        ]
-    },
-    saul: {
-        id: 'saul',
-        name: '索尔·古德曼 (Saul Goodman)',
-        alias: '风骚律师 / 吉米·麦吉尔',
-        hp: 200, maxHp: 200,
-        atk: 5, def: 20,
-        color: '#ff55ff',
-        title: '宪法保卫者 & 法律魔术师',
-        dialogues: [
-            "你遇到麻烦了？最好给索尔打电话！(Better Call Saul!)",
-            "你知道你有权利吗？宪法说你有，我也说你有！",
-            "在我的当事人开口前，你们所有的弹幕都是非法的证据搜集！",
-            "我有五十种在地下法庭让你无罪释放的办法，孩子。",
-            "别动手，我们来看看责任免除条款第4条第B款..."
-        ],
-        acts: [
-            { name: '查看', desc: '索尔 - ATK 5 DEF 20。穿着耀眼的亮黄色西装配花领带，嘴皮子比弹幕还快。' },
-            { name: '出示名片', desc: '你从口袋掏出了一张皱巴巴的索尔法律咨询名片。索尔：“老顾客打八折！”', effect: 'spare_up' },
-            { name: '主张权利', desc: '你大喊：“我行使沉默权，并要求我的律师在场！”
-索尔感动得热泪盈眶：“天哪，一个真正懂法的模范公民！”', effect: 'spare_max' },
-            { name: '指控老白', desc: '你声称一切都是海森堡指使的。索尔眼睛一转，开始计算巨额律师费。', effect: 'distract' }
-        ]
-    },
-    gus: {
-        id: 'gus',
-        name: '古斯·弗林 (Gus Fring)',
-        alias: '炸鸡叔 / 洛斯波洛斯掌门',
-        hp: 750, maxHp: 750,
-        atk: 14, def: 12,
-        color: '#ff9900',
-        title: '冷酷帝王 / 完美主义者',
-        dialogues: [
-            "我就藏在光天化日之下。(I hide in plain sight.)",
-            "炸鸡的火候和人生的结局一样，不允许有一秒的误差。",
-            "一个男人，必须养家。(A man provides.)",
-            "不要让我重复第二遍。",
-            "我会杀了你的搭档，我会杀了你的决心。"
-        ],
-        acts: [
-            { name: '查看', desc: '古斯 - ATK 14 DEF 12。西装笔挺，面带礼貌而令人毛骨悚然的微笑。' },
-            { name: '赞赏炸鸡', desc: '你赞美炸鸡店的秘制脆皮。古斯微微颔首：“我们只使用最优质的香料与规程。”', effect: 'spare_up' },
-            { name: '保持专业', desc: '你站得笔直，严格保持沉默与商业礼仪。古斯对你的纪律性表示赞赏。', effect: 'spare_up' }
-        ]
-    }
-};
-
-const EASTER_EGGS = [
-    "【彩蛋】汉克在矿石展会上大喊：‘玛丽！那是矿物！不是石头！(They are minerals!)’",
-    "【彩蛋】老白把整张巨型披萨完美甩到了车库屋顶上！",
-    "【彩蛋】麦克冷冷地看着你：‘孩子，别再搞半吊子措施了。(No more half-measures.)’",
-    "【彩蛋】小粉买了一卡车工业巨型磁铁，把隔壁证物室的墙吸穿了！",
-    "【彩蛋】索尔的充气自由女神像在暴风雨中向你疯狂招手！",
-    "【彩蛋】赫克托·萨拉曼卡疯狂按轮椅铃铛：叮叮叮叮叮叮！！！💥",
-    "【彩蛋】风骚律师：吉米把查克的电磁过敏房间铺满了锡箔纸。",
-    "【彩蛋】老白在沙漠房车里只穿了一条白内裤配防毒面具。"
-];
-
-// ==================== 游戏主状态机 ====================
-const cvs = document.getElementById('cvs');
-const ctx = cvs.getContext('2d');
-
-const STATE = {
-    TITLE: 0,
-    DIALOGUE: 1,
-    SELECT_ACT: 2,
-    PLAYER_TURN: 3,
-    ENEMY_TURN: 4,
-    TARGET_FIGHT: 5,
-    VICTORY: 6,
-    GAMEOVER: 7
-};
-
-const Game = {
-    state: STATE.TITLE,
-    bossList: ['walter', 'jesse', 'saul', 'gus'],
-    bossIndex: 0,
-    boss: null,
-    sparePoints: 0,
-    toastMsg: '',
-    toastTimer: 0,
-    
-    // 玩家数据
-    player: {
-        name: '决心',
-        lv: 1,
-        hp: 20,
-        maxHp: 20,
-        x: 320,
-        y: 280,
-        speed: 3,
-        invincible: 0,
-        items: [
-            { name: '蓝色结晶', heal: 15, desc: '纯度高达 99.1% 的天蓝色薄荷糖。恢复 15 HP。' },
-            { name: '洛斯炸鸡', heal: 20, desc: '古斯炸鸡店的招牌香脆鸡腿。恢复满额 20 HP！' },
-            { name: '索尔名片', heal: 10, desc: '写满法律免责条款的名片。恢复 10 HP 并增加防御。' },
-            { name: '老白三明治', heal: 12, desc: '切掉面包皮的火腿三明治。恢复 12 HP。' }
-        ]
-    },
-
-    // 战斗框配置 (Undertale Arena)
-    box: {
-        x: 170,
-        y: 250,
-        w: 300,
-        h: 130,
-        targetX: 170,
-        targetY: 250,
-        targetW: 300,
-        targetH: 130
-    },
-
-    // 菜单选择
-    btnIndex: 0, // 0: FIGHT, 1: ACT, 2: ITEM, 3: MERCY
-    subIndex: 0,
-    menuLevel: 0, // 0: 主按钮, 1: 子菜单 (ACT列表/ITEM列表)
-    
-    // 弹幕系统
-    bullets: [],
-    enemyTurnTimer: 0,
-    enemyTurnDuration: 360, // 约6秒 (60fps)
-    patternIndex: 0,
-
-    // 攻击条 (Fight Timing Bar)
-    fightBar: {
-        x: 0,
-        speed: 6,
-        active: false,
-        hit: false
-    },
-
-    // 对话系统
-    dialogText: '',
-    dialogDisplay: '',
-    dialogCharIdx: 0,
-    dialogTimer: 0,
-    dialogSpeaker: '',
-    dialogCallback: null,
-
-    // 按键输入
-    keys: {
-        up: false, down: false, left: false, right: false,
-        z: false, x: false, c: false,
-        z_pressed: false, x_pressed: false, c_pressed: false
-    }
-};
-
-// 初始化指定Boss
-function initBoss(id) {
-    const raw = ROSTER[id];
-    Game.boss = JSON.parse(JSON.stringify(raw));
-    Game.sparePoints = 0;
-    Game.box = { x: 170, y: 250, w: 300, h: 130, targetX: 170, targetY: 250, targetW: 300, targetH: 130 };
-    Game.btnIndex = 0;
-    Game.menuLevel = 0;
-    Game.subIndex = 0;
-}
-
-// 弹出毒师彩蛋
-function showRandomEasterEgg() {
-    const egg = EASTER_EGGS[Math.floor(Math.random() * EASTER_EGGS.length)];
-    Game.toastMsg = egg;
-    Game.toastTimer = 240; // 显示4秒
-    audio.select();
-}
-
-// ==================== 弹幕发生器 (Danmaku Patterns) ====================
-function spawnBullets(frame) {
-    const b = Game.box;
-    const bossId = Game.boss.id;
-    
-    if (bossId === 'walter') {
-        // 老白弹幕：99.1% 蓝色晶体散射 + 烧杯试管下落
-        if (frame % 35 === 0) {
-            // 顶部晶体雨
-            const rx = b.x + 20 + Math.random() * (b.w - 40);
-            Game.bullets.push({
-                x: rx,
-                y: b.y + 5,
-                vx: (Math.random() - 0.5) * 1.5,
-                vy: 2.2 + Math.random() * 1.5,
-                size: 6,
-                color: '#00ffff',
-                type: 'crystal'
-            });
-        }
-        if (frame % 70 === 0) {
-            // 追踪化学烟雾弹
-            const angle = Math.atan2(Game.player.y - (b.y - 30), Game.player.x - 320);
-            Game.bullets.push({
-                x: 320,
-                y: b.y - 20,
-                vx: Math.cos(angle) * 2.8,
-                vy: Math.sin(angle) * 2.8,
-                size: 8,
-                color: '#55ff55',
-                type: 'gas'
-            });
-        }
-        if (frame % 120 === 0) {
-            // 敲门大招波纹
-            for (let i = 0; i < 8; i++) {
-                const ang = (i / 8) * Math.PI * 2;
-                Game.bullets.push({
-                    x: 320,
-                    y: b.y + b.h/2,
-                    vx: Math.cos(ang) * 1.8,
-                    vy: Math.sin(ang) * 1.8,
-                    size: 5,
-                    color: '#ffffff',
-                    type: 'knock'
-                });
-            }
-        }
-    }
-    else if (bossId === 'jesse') {
-        // 小粉弹幕：辣椒粉炸弹 (Chili P) + 磁铁引力场
-        if (frame % 40 === 0) {
-            const side = Math.random() > 0.5 ? b.x + 5 : b.x + b.w - 5;
-            Game.bullets.push({
-                x: side,
-                y: b.y + 20 + Math.random() * (b.h - 40),
-                vx: side === b.x + 5 ? 2.5 : -2.5,
-                vy: (Math.random() - 0.5) * 1.5,
-                size: 7,
-                color: '#ff3300',
-                type: 'chili'
-            });
-        }
-        if (frame % 80 === 0) {
-            // 磁铁力场弹：旋转扩散
-            for (let k = 0; k < 4; k++) {
-                const ang = (frame*0.05) + (k * Math.PI/2);
-                Game.bullets.push({
-                    x: 320,
-                    y: b.y + b.h/2,
-                    vx: Math.cos(ang) * 2.2,
-                    vy: Math.sin(ang) * 2.2,
-                    size: 6,
-                    color: '#ffff00',
-                    type: 'magnet'
-                });
-            }
-        }
-    }
-    else if (bossId === 'saul') {
-        // 索尔弹幕：满天飞舞的传票 (Subpoena) 与免责声明 (Disclaimer)
-        if (frame % 30 === 0) {
-            Game.bullets.push({
-                x: b.x + 10 + Math.random() * (b.w - 20),
-                y: b.y - 10,
-                vx: (Math.random() - 0.5) * 2,
-                vy: 2.0,
-                w: 16,
-                h: 8,
-                color: '#ffffff',
-                type: 'paper'
-            });
-        }
-        if (frame % 50 === 0) {
-            // 左右夹击的黄色诉讼函
-            Game.bullets.push({
-                x: b.x + 5,
-                y: Game.player.y + (Math.random() - 0.5) * 40,
-                vx: 3.2,
-                vy: 0,
-                w: 14,
-                h: 6,
-                color: '#ffff55',
-                type: 'paper'
-            });
-        }
-    }
-    else if (bossId === 'gus') {
-        // 古斯弹幕：精准切割线与高速炸鸡桶
-        if (frame % 25 === 0) {
-            Game.bullets.push({
-                x: b.x + b.w / 2 + Math.sin(frame * 0.1) * (b.w/2 - 20),
-                y: b.y + 5,
-                vx: 0,
-                vy: 3.5,
-                size: 5,
-                color: '#ff8800',
-                type: 'blade'
-            });
-        }
-        if (frame % 60 === 0) {
-            // 环形刀片
-            for (let i = 0; i < 6; i++) {
-                const a = (i/6)*Math.PI*2 + frame*0.02;
-                Game.bullets.push({
-                    x: 320,
-                    y: b.y + b.h/2,
-                    vx: Math.cos(a) * 2.5,
-                    vy: Math.sin(a) * 2.5,
-                    size: 6,
-                    color: '#ff2222',
-                    type: 'blade'
-                });
-            }
-        }
-    }
-}
-
-// ==================== 输入处理 ====================
-const keyMap = {
-    'ArrowUp': 'up', 'KeyW': 'up', 'w': 'up',
-    'ArrowDown': 'down', 'KeyS': 'down', 's': 'down',
-    'ArrowLeft': 'left', 'KeyA': 'left', 'a': 'left',
-    'ArrowRight': 'right', 'KeyD': 'right', 'd': 'right',
-    'KeyZ': 'z', 'Enter': 'z', 'z': 'z',
-    'KeyX': 'x', 'ShiftLeft': 'x', 'ShiftRight': 'x', 'x': 'x',
-    'KeyC': 'c', 'c': 'c'
-};
-
-window.addEventListener('keydown', (e) => {
-    const k = keyMap[e.code] || keyMap[e.key];
-    if (k) {
-        if (!Game.keys[k]) {
-            if (k === 'z') Game.keys.z_pressed = true;
-            if (k === 'x') Game.keys.x_pressed = true;
-            if (k === 'c') Game.keys.c_pressed = true;
-        }
-        Game.keys[k] = true;
-    }
-});
-
-window.addEventListener('keyup', (e) => {
-    const k = keyMap[e.code] || keyMap[e.key];
-    if (k) {
-        Game.keys[k] = false;
-    }
-});
-
-// 触摸支持绑定
-function setupTouch() {
-    const hasTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-    if (hasTouch) {
-        document.getElementById('touch-controls').style.display = 'flex';
-    }
-    const bindTouch = (id, keyName) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const start = (e) => {
-            e.preventDefault();
-            Game.keys[keyName] = true;
-            Game.keys[keyName + '_pressed'] = true;
-            el.classList.add('active');
-        };
-        const end = (e) => {
-            e.preventDefault();
-            Game.keys[keyName] = false;
-            el.classList.remove('active');
-        };
-        el.addEventListener('touchstart', start, {passive: false});
-        el.addEventListener('touchend', end, {passive: false});
-        el.addEventListener('mousedown', start);
-        el.addEventListener('mouseup', end);
-    };
-    bindTouch('btn-up', 'up');
-    bindTouch('btn-down', 'down');
-    bindTouch('btn-left', 'left');
-    bindTouch('btn-right', 'right');
-    bindTouch('btn-z', 'z');
-    bindTouch('btn-x', 'x');
-    bindTouch('btn-c', 'c');
-}
-setupTouch();
-
-// ==================== 主循环与逻辑更新 ====================
-function startDialogue(speaker, text, callback) {
-    Game.state = STATE.DIALOGUE;
-    Game.dialogSpeaker = speaker;
-    Game.dialogText = text;
-    Game.dialogDisplay = '';
-    Game.dialogCharIdx = 0;
-    Game.dialogTimer = 0;
-    Game.dialogCallback = callback;
-}
-
-function update() {
-    // 随机彩蛋按键
-    if (Game.keys.c_pressed) {
-        Game.keys.c_pressed = false;
-        showRandomEasterEgg();
-    }
-    if (Game.toastTimer > 0) {
-        Game.toastTimer--;
-    }
-
-    switch (Game.state) {
-        case STATE.TITLE:
-            if (Game.keys.z_pressed) {
-                Game.keys.z_pressed = false;
-                audio.confirm();
-                audio.startBGM();
-                initBoss('walter');
-                startDialogue('老白', 'Skyler... 你根本不明白。我做这一切，都是为了这个家庭。
-既然你来到了地下世界，那就证明你有能力在这个充满毒素的环境中活下去！', () => {
-                    Game.state = STATE.PLAYER_TURN;
-                    Game.dialogText = "* 空气中弥漫着高纯度乙酸与蓝晶气味。老白冷酷地注视着你。";
-                });
-            }
-            break;
-
-        case STATE.DIALOGUE:
-            // 打字机效果
-            if (Game.dialogCharIdx < Game.dialogText.length) {
-                Game.dialogTimer++;
-                if (Game.dialogTimer >= 2) {
-                    Game.dialogTimer = 0;
-                    Game.dialogDisplay += Game.dialogText[Game.dialogCharIdx];
-                    if (Game.dialogCharIdx % 2 === 0) audio.textBeep(240);
-                    Game.dialogCharIdx++;
-                }
-            }
-            if (Game.keys.z_pressed) {
-                Game.keys.z_pressed = false;
-                if (Game.dialogCharIdx < Game.dialogText.length) {
-                    // 快速显示完
-                    Game.dialogDisplay = Game.dialogText;
-                    Game.dialogCharIdx = Game.dialogText.length;
-                } else {
-                    // 结束对话
-                    audio.select();
-                    if (Game.dialogCallback) {
-                        const cb = Game.dialogCallback;
-                        Game.dialogCallback = null;
-                        cb();
-                    } else {
-                        Game.state = STATE.PLAYER_TURN;
-                    }
-                }
-            }
-            break;
-
-        case STATE.PLAYER_TURN:
-            handlePlayerMenu();
-            break;
-
-        case STATE.TARGET_FIGHT:
-            // 攻击条滑动
-            Game.fightBar.x += Game.fightBar.speed;
-            if (Game.fightBar.x > 500) {
-                // 挥空 Miss
-                Game.state = STATE.ENEMY_TURN;
-                startEnemyTurn();
-            }
-            if (Game.keys.z_pressed) {
-                Game.keys.z_pressed = false;
-                audio.slash();
-                // 计算命中精准度
-                const dist = Math.abs(Game.fightBar.x - 270);
-                let damage = Math.max(5, Math.floor((1 - dist / 250) * (30 + Math.random() * 20)));
-                Game.boss.hp -= damage;
-                audio.hit();
-                
-                startDialogue(Game.boss.name, `[ 命中！造成 ${damage} 点伤害！] 剩余 HP: ${Math.max(0, Game.boss.hp)}`, () => {
-                    if (Game.boss.hp <= 0) {
-                        handleBossDefeated(false);
-                    } else {
-                        startEnemyTurn();
-                    }
-                });
-            }
-            break;
-
-        case STATE.ENEMY_TURN:
-            updateEnemyTurn();
-            break;
-
-        case STATE.VICTORY:
-        case STATE.GAMEOVER:
-            if (Game.keys.z_pressed) {
-                Game.keys.z_pressed = false;
-                audio.confirm();
-                Game.state = STATE.TITLE;
-                Game.player.hp = Game.player.maxHp;
-            }
-            break;
-    }
-
-    // 清理单次按键缓冲
-    Game.keys.z_pressed = false;
-    Game.keys.x_pressed = false;
-    Game.keys.c_pressed = false;
-}
-
-// 处理战斗主菜单与子菜单选择
-function handlePlayerMenu() {
-    const numBtns = 4; // FIGHT, ACT, ITEM, MERCY
-
-    if (Game.menuLevel === 0) {
-        // 主按钮横向切换
-        if (Game.keys.left && !Game.keys._l_lock) { Game.btnIndex = (Game.btnIndex + 3) % numBtns; audio.select(); }
-        if (Game.keys.right && !Game.keys._r_lock) { Game.btnIndex = (Game.btnIndex + 1) % numBtns; audio.select(); }
-        Game.keys._l_lock = Game.keys.left;
-        Game.keys._r_lock = Game.keys.right;
-
-        if (Game.keys.z_pressed) {
-            Game.keys.z_pressed = false;
-            audio.confirm();
-            if (Game.btnIndex === 0) {
-                // FIGHT
-                Game.state = STATE.TARGET_FIGHT;
-                Game.fightBar.x = 40;
-                Game.fightBar.speed = 7;
-            } else if (Game.btnIndex === 1) {
-                // ACT
-                Game.menuLevel = 1;
-                Game.subIndex = 0;
-            } else if (Game.btnIndex === 2) {
-                // ITEM
-                Game.menuLevel = 2;
-                Game.subIndex = 0;
-            } else if (Game.btnIndex === 3) {
-                // MERCY
-                if (Game.sparePoints >= 3 || Game.boss.hp <= 100) {
-                    handleBossDefeated(true);
-                } else {
-                    startDialogue(Game.boss.name, `* 你尝试饶恕 ${Game.boss.name}，但他眼中闪烁着冷光，现在还无法饶恕！`, () => {
-                        startEnemyTurn();
-                    });
-                }
-            }
-        }
-    } else if (Game.menuLevel === 1) {
-        // ACT 选项列表
-        const acts = Game.boss.acts;
-        if (Game.keys.up && !Game.keys._u_lock) { Game.subIndex = (Game.subIndex + acts.length - 1) % acts.length; audio.select(); }
-        if (Game.keys.down && !Game.keys._d_lock) { Game.subIndex = (Game.subIndex + 1) % acts.length; audio.select(); }
-        Game.keys._u_lock = Game.keys.up;
-        Game.keys._d_lock = Game.keys.down;
-
-        if (Game.keys.x_pressed) {
-            Game.keys.x_pressed = false;
-            Game.menuLevel = 0;
-            audio.select();
-        }
-        if (Game.keys.z_pressed) {
-            Game.keys.z_pressed = false;
-            audio.confirm();
-            const act = acts[Game.subIndex];
-            if (act.effect === 'spare_up') Game.sparePoints += 1.5;
-            if (act.effect === 'spare_max') Game.sparePoints += 4;
-            if (act.effect === 'weaken') Game.boss.atk = Math.max(3, Game.boss.atk - 2);
-            
-            startDialogue(Game.boss.name, act.desc, () => {
-                startEnemyTurn();
-            });
-        }
-    } else if (Game.menuLevel === 2) {
-        // ITEM 物品列表
-        const items = Game.player.items;
-        if (items.length === 0) {
-            if (Game.keys.x_pressed || Game.keys.z_pressed) Game.menuLevel = 0;
-            return;
-        }
-        if (Game.keys.up && !Game.keys._u_lock) { Game.subIndex = (Game.subIndex + items.length - 1) % items.length; audio.select(); }
-        if (Game.keys.down && !Game.keys._d_lock) { Game.subIndex = (Game.subIndex + 1) % items.length; audio.select(); }
-        Game.keys._u_lock = Game.keys.up;
-        Game.keys._d_lock = Game.keys.down;
-
-        if (Game.keys.x_pressed) {
-            Game.keys.x_pressed = false;
-            Game.menuLevel = 0;
-            audio.select();
-        }
-        if (Game.keys.z_pressed) {
-            Game.keys.z_pressed = false;
-            audio.confirm();
-            const item = items[Game.subIndex];
-            Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + item.heal);
-            items.splice(Game.subIndex, 1);
-            
-            startDialogue('系统', `* 你食用了【${item.name}】。${item.desc}
-HP 恢复到了 ${Game.player.hp}/${Game.player.maxHp}！`, () => {
-                startEnemyTurn();
-            });
-        }
-    }
-}
-
-// 开启敌方弹幕回合
-function startEnemyTurn() {
-    Game.state = STATE.ENEMY_TURN;
-    Game.bullets = [];
-    Game.enemyTurnTimer = 0;
-    Game.player.x = Game.box.x + Game.box.w / 2;
-    Game.player.y = Game.box.y + Game.box.h / 2;
-    Game.menuLevel = 0;
-}
-
-// 敌方弹幕回合更新
-function updateEnemyTurn() {
-    Game.enemyTurnTimer++;
-    
-    // 玩家移动 (红心)
-    const spd = Game.keys.x ? Game.player.speed * 0.5 : Game.player.speed; // X按键减速微操 (Focus mode)
-    if (Game.keys.up) Game.player.y -= spd;
-    if (Game.keys.down) Game.player.y += spd;
-    if (Game.keys.left) Game.player.x -= spd;
-    if (Game.keys.right) Game.player.x += spd;
-
-    // 限制在战斗框内
-    const margin = 8;
-    Game.player.x = Math.max(Game.box.x + margin, Math.min(Game.box.x + Game.box.w - margin, Game.player.x));
-    Game.player.y = Math.max(Game.box.y + margin, Math.min(Game.box.y + Game.box.h - margin, Game.player.y));
-
-    // 生成弹幕
-    spawnBullets(Game.enemyTurnTimer);
-
-    // 无敌帧递减
-    if (Game.player.invincible > 0) Game.player.invincible--;
-
-    // 弹幕位移与碰撞检测
-    for (let i = Game.bullets.length - 1; i >= 0; i--) {
-        const b = Game.bullets[i];
-        b.x += b.vx || 0;
-        b.y += b.vy || 0;
-
-        // 碰撞判断 (红心半径约 5px)
-        const pR = 5;
-        const bR = b.size || (b.w ? b.w/2 : 6);
-        const distSq = (b.x - Game.player.x)**2 + (b.y - Game.player.y)**2;
-        
-        if (distSq < (pR + bR)**2 && Game.player.invincible <= 0) {
-            // 受击
-            Game.player.hp -= Math.max(1, Game.boss.atk - 3);
-            Game.player.invincible = 45; // 0.75秒无敌
-            audio.hit();
-            if (Game.player.hp <= 0) {
-                Game.player.hp = 0;
-                Game.state = STATE.GAMEOVER;
-                return;
-            }
-        }
-
-        // 移除超出屏幕的弹幕
-        if (b.x < 50 || b.x > 590 || b.y < 50 || b.y > 450) {
-            Game.bullets.splice(i, 1);
-        }
-    }
-
-    // 回合结束
-    if (Game.enemyTurnTimer >= Game.enemyTurnDuration) {
-        Game.state = STATE.PLAYER_TURN;
-        Game.bullets = [];
-        // 随机敌方吐槽
-        const randomQuote = Game.boss.dialogues[Math.floor(Math.random() * Game.boss.dialogues.length)];
-        startDialogue(Game.boss.name, `* "${randomQuote}"`, () => {
-            Game.state = STATE.PLAYER_TURN;
-        });
-    }
-}
-
-// 击败或饶恕 Boss 结算
-function handleBossDefeated(isSpared) {
-    audio.confirm();
-    let msg = '';
-    if (isSpared) {
-        msg = `【和平饶恕！】
-你用决心与对《绝命毒师》的理解感化了 ${Game.boss.name}！
-${Game.boss.name} 赞许地向你点头，递给你一瓶纪念品。`;
-    } else {
-        msg = `【战斗胜利！】
-${Game.boss.name} 倒在了化学烟雾之中。
-你获得了 150 EXP 和 50 G。你的【决心】变得更加冰冷。`;
-    }
-
-    Game.bossIndex++;
-    if (Game.bossIndex < Game.bossList.length) {
-        const nextId = Game.bossList[Game.bossIndex];
-        startDialogue(Game.boss.name, msg + `
-
-【前方警报】新的强敌已进入地下通道...准备迎接【${ROSTER[nextId].name}】！`, () => {
-            initBoss(nextId);
-            startDialogue(Game.boss.name, `"我是 ${Game.boss.name}。${Game.boss.dialogues[0]}"`, () => {
-                Game.state = STATE.PLAYER_TURN;
-            });
-        });
-    } else {
-        Game.state = STATE.VICTORY;
-    }
-}
-
-// ==================== 像素渲染系统 ====================
-function draw() {
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, 640, 480);
-
-    // 标题画面
-    if (Game.state === STATE.TITLE) {
-        drawTitleScreen();
-        return;
-    }
-
-    // 游戏通关/失败画面
-    if (Game.state === STATE.VICTORY) {
-        drawVictoryScreen();
-        return;
-    }
-    if (Game.state === STATE.GAMEOVER) {
-        drawGameOverScreen();
-        return;
-    }
-
-    // 1. 顶部 Boss 形象与立绘区
-    drawBossSprite();
-
-    // 2. 战斗框 (Arena Box)
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(Game.box.x, Game.box.y, Game.box.w, Game.box.h);
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(Game.box.x + 2, Game.box.y + 2, Game.box.w - 4, Game.box.h - 4);
-
-    // 3. 战斗框内部内容渲染
-    if (Game.state === STATE.ENEMY_TURN) {
-        // 弹幕渲染
-        drawBullets();
-        // 玩家红心 (Soul)
-        drawSoul(Game.player.x, Game.player.y, Game.player.invincible % 6 >= 3);
-    } else if (Game.state === STATE.TARGET_FIGHT) {
-        // 攻击瞄准滑动条
-        drawFightTimingBar();
-    } else if (Game.menuLevel === 1) {
-        // ACT 子菜单列表
-        drawActMenu();
-    } else if (Game.menuLevel === 2) {
-        // ITEM 子菜单列表
-        drawItemMenu();
-    } else if (Game.state === STATE.DIALOGUE) {
-        // 对话文本渲染在框内
-        drawDialogBox();
-    } else {
-        // 默认回合提示文本
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '16px monospace';
-        ctx.fillText(Game.dialogText || "* 充满毒师气息的压迫感笼罩着四周。", Game.box.x + 16, Game.box.y + 35);
-    }
-
-    // 4. 底部状态栏 (HP / 名字 / LV / 饶恕条)
-    drawStatusBar();
-
-    // 5. 底部四个主按钮 (FIGHT, ACT, ITEM, MERCY)
-    drawActionButtons();
-
-    // 6. 彩蛋 Toast 弹窗
-    if (Game.toastTimer > 0) {
-        drawToast();
-    }
-}
-
-// 绘制 Boss 像素立绘
-function drawBossSprite() {
-    const b = Game.boss;
-    const cx = 320;
-    const cy = 130;
-
-    // 光环背景
-    ctx.save();
-    ctx.strokeStyle = b.color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 65, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Boss 像素剪影绘制
-    ctx.fillStyle = b.color;
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 20px monospace';
-    ctx.fillText(b.name, cx, cy - 80);
-    ctx.font = '13px monospace';
-    ctx.fillStyle = '#aaaaaa';
-    ctx.fillText(`【${b.title}】`, cx, cy - 60);
-
-    // 简易专属像素头像
-    if (b.id === 'walter') {
-        // 老白：光头 + 黑框眼镜 + 山羊胡 + 标志性黑帽子
-        ctx.fillStyle = '#f5cba7';
-        ctx.beginPath();
-        ctx.arc(cx, cy, 32, 0, Math.PI * 2);
-        ctx.fill();
-        // 黑色平顶帽
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(cx - 40, cy - 35, 80, 8);
-        ctx.fillRect(cx - 25, cy - 55, 50, 22);
-        // 黑框眼镜
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(cx - 22, cy - 10, 16, 12);
-        ctx.strokeRect(cx + 6, cy - 10, 16, 12);
-        ctx.beginPath(); ctx.moveTo(cx - 6, cy - 4); ctx.lineTo(cx + 6, cy - 4); ctx.stroke();
-        // 胡须
-        ctx.fillStyle = '#6e2c00';
-        ctx.fillRect(cx - 10, cy + 12, 20, 8);
-    } else if (b.id === 'jesse') {
-        // 小粉：大毛线帽 + 连帽衫
-        ctx.fillStyle = '#f5cba7';
-        ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fill();
-        // 黄黑毛线帽
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath(); ctx.arc(cx, cy - 10, 32, Math.PI, 0); ctx.fill();
-        ctx.fillStyle = '#000';
-        ctx.fillRect(cx - 32, cy - 12, 64, 6);
-    } else if (b.id === 'saul') {
-        // 索尔：斜分背头 + 亮黄西装 + 标志性手势
-        ctx.fillStyle = '#f5cba7';
-        ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fill();
-        // 棕色背头
-        ctx.fillStyle = '#5d4037';
-        ctx.beginPath(); ctx.arc(cx, cy - 8, 32, Math.PI * 0.9, 0.1); ctx.fill();
-        // 亮粉花领带
-        ctx.fillStyle = '#ff007f';
-        ctx.fillRect(cx - 5, cy + 30, 10, 25);
-    } else if (b.id === 'gus') {
-        // 古斯：金丝眼镜 + 笔挺领带 + 严肃神情
-        ctx.fillStyle = '#d35400';
-        ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#f1c40f';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(cx - 20, cy - 8, 14, 10);
-        ctx.strokeRect(cx + 6, cy - 8, 14, 10);
-        ctx.fillStyle = '#34495e';
-        ctx.fillRect(cx - 30, cy + 25, 60, 30);
-    }
-
-    // Boss 血条
-    const hpBarW = 160;
-    const curW = (Game.boss.hp / Game.boss.maxHp) * hpBarW;
-    ctx.fillStyle = '#444';
-    ctx.fillRect(cx - hpBarW/2, cy + 50, hpBarW, 8);
-    ctx.fillStyle = '#00ff88';
-    ctx.fillRect(cx - hpBarW/2, cy + 50, Math.max(0, curW), 8);
-
-    ctx.restore();
-}
-
-// 绘制弹幕
-function drawBullets() {
-    for (let b of Game.bullets) {
-        ctx.fillStyle = b.color || '#fff';
-        if (b.type === 'paper') {
-            ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, b.h);
-            ctx.strokeStyle = '#000';
-            ctx.strokeRect(b.x - b.w/2, b.y - b.h/2, b.w, b.h);
-        } else if (b.type === 'crystal') {
-            // 菱形晶体
-            ctx.beginPath();
-            ctx.moveTo(b.x, b.y - b.size);
-            ctx.lineTo(b.x + b.size, b.y);
-            ctx.lineTo(b.x, b.y + b.size);
-            ctx.lineTo(b.x - b.size, b.y);
-            ctx.closePath();
-            ctx.fill();
-        } else {
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, b.size || 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-}
-
-// 绘制红心 (Soul)
-function drawSoul(x, y, hide = false) {
-    if (hide) return;
-    ctx.save();
-    ctx.fillStyle = '#ff0000'; // 经典红色决心
-    ctx.beginPath();
-    ctx.moveTo(x, y + 3);
-    ctx.bezierCurveTo(x, y, x - 6, y - 6, x - 6, y - 1);
-    ctx.bezierCurveTo(x - 6, y + 4, x, y + 7, x, y + 9);
-    ctx.bezierCurveTo(x, y + 7, x + 6, y + 4, x + 6, y - 1);
-    ctx.bezierCurveTo(x + 6, y - 6, x, y, x, y + 3);
-    ctx.fill();
-    ctx.restore();
-}
-
-// 绘制攻击判定条
-function drawFightTimingBar() {
-    ctx.strokeStyle = '#555';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(Game.box.x + 20, Game.box.y + 40, Game.box.w - 40, 40);
-    
-    // 完美打击区
-    ctx.fillStyle = '#00ff88';
-    ctx.fillRect(260, Game.box.y + 41, 20, 38);
-
-    // 滑动标线
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(Game.box.x + 20 + Game.fightBar.x, Game.box.y + 36, 10, 48);
-}
-
-// 绘制 ACT 菜单
-function drawActMenu() {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px monospace';
-    const acts = Game.boss.acts;
-    for (let i = 0; i < acts.length; i++) {
-        const isSel = (i === Game.subIndex);
-        const tx = Game.box.x + 35;
-        const ty = Game.box.y + 35 + i * 26;
-        if (isSel) {
-            drawSoul(tx - 15, ty - 6);
-            ctx.fillStyle = '#ffff00';
-        } else {
-            ctx.fillStyle = '#ffffff';
-        }
-        ctx.fillText(`* ${acts[i].name}`, tx, ty);
-    }
-}
-
-// 绘制 ITEM 菜单
-function drawItemMenu() {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px monospace';
-    const items = Game.player.items;
-    if (items.length === 0) {
-        ctx.fillText("* 你的背包空空如也。", Game.box.x + 25, Game.box.y + 40);
-        return;
-    }
-    for (let i = 0; i < items.length; i++) {
-        const isSel = (i === Game.subIndex);
-        const tx = Game.box.x + 35;
-        const ty = Game.box.y + 35 + i * 26;
-        if (isSel) {
-            drawSoul(tx - 15, ty - 6);
-            ctx.fillStyle = '#ffff00';
-        } else {
-            ctx.fillStyle = '#ffffff';
-        }
-        ctx.fillText(`* ${items[i].name} (恢复 ${items[i].heal})`, tx, ty);
-    }
-}
-
-// 绘制对话文字
-function drawDialogBox() {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px monospace';
-    const lines = Game.dialogDisplay.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], Game.box.x + 20, Game.box.y + 35 + i * 24);
-    }
-}
-
-// 绘制底部状态栏
-function drawStatusBar() {
-    const y = 405;
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 16px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`${Game.player.name}   LV ${Game.player.lv}`, 80, y);
-
-    // HP 文字与血条
-    ctx.fillText('HP', 240, y);
-    const hpW = 80;
-    const fillW = (Game.player.hp / Game.player.maxHp) * hpW;
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(275, y - 13, hpW, 15);
-    ctx.fillStyle = '#ffff00';
-    ctx.fillRect(275, y - 13, fillW, 15);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`${Game.player.hp} / ${Game.player.maxHp}`, 370, y);
-}
-
-// 绘制底部 4 个战斗大按钮
-function drawActionButtons() {
-    const btnLabels = ['战斗 (FIGHT)', '行动 (ACT)', '物品 (ITEM)', '饶恕 (MERCY)'];
-    const btnColors = ['#ff5555', '#ffaa00', '#55aaff', '#55ff55'];
-    const startX = 70;
-    const btnW = 115;
-    const btnH = 40;
-    const y = 430;
-
-    for (let i = 0; i < 4; i++) {
-        const bx = startX + i * 130;
-        const isSel = (Game.state === STATE.PLAYER_TURN && Game.menuLevel === 0 && Game.btnIndex === i);
-
-        ctx.strokeStyle = isSel ? '#ffff00' : btnColors[i];
-        ctx.lineWidth = isSel ? 3 : 2;
-        ctx.strokeRect(bx, y, btnW, btnH);
-
-        if (isSel) {
-            drawSoul(bx + 15, y + 20);
-            ctx.fillStyle = '#ffff00';
-        } else {
-            ctx.fillStyle = btnColors[i];
-        }
-
-        ctx.font = 'bold 14px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(btnLabels[i], bx + btnW/2 + (isSel ? 6 : 0), y + 25);
-    }
-}
-
-// 绘制彩蛋弹窗
-function drawToast() {
-    ctx.save();
-    ctx.fillStyle = 'rgba(0, 20, 10, 0.9)';
-    ctx.strokeStyle = '#00ffcc';
-    ctx.lineWidth = 2;
-    ctx.fillRect(40, 20, 560, 42);
-    ctx.strokeRect(40, 20, 560, 42);
-    
-    ctx.fillStyle = '#00ffcc';
-    ctx.font = '13px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(Game.toastMsg, 320, 46);
-    ctx.restore();
-}
-
-// 标题画面渲染
-function drawTitleScreen() {
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#00ff88';
-    ctx.font = 'bold 30px monospace';
-    ctx.fillText('传说之下：毒师宇宙', 320, 130);
-    
-    ctx.fillStyle = '#aaaaaa';
-    ctx.font = '16px monospace';
-    ctx.fillText('UNDERTALE : HEISENBERG CHRONICLES', 320, 170);
-    ctx.fillText('【绝命毒师 × 风骚律师 网页版 1.0】', 320, 200);
-
-    // 像素小红心与装饰
-    drawSoul(320, 250);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '18px monospace';
-    ctx.fillText('[ 按 Z / Enter 或点击开始行动 ]', 320, 310);
-
-    ctx.font = '13px monospace';
-    ctx.fillStyle = '#777777';
-    ctx.fillText('出场人物: 老白、小粉、索尔·古德曼、古斯·弗林', 320, 370);
-    ctx.fillText('按 [C] 可随时在战斗中调出经典毒师名场面彩蛋', 320, 400);
-}
-
-// 胜利通关画面
-function drawVictoryScreen() {
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#ffff00';
-    ctx.font = 'bold 26px monospace';
-    ctx.fillText('★ 完美结局：阿尔伯克基传奇 ★', 320, 140);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px monospace';
-    ctx.fillText('你成功通过了老白、小粉、索尔与古斯的所有考验！', 320, 190);
-    ctx.fillText('你的【决心】与【纯度】达到了前所未有的 99.1%！', 320, 220);
-    ctx.fillText('地下世界的毒师秩序在你的选择下走向了和平。', 320, 250);
-
-    ctx.fillStyle = '#00ffcc';
-    ctx.fillText('[ 按 Z / Enter 重新开始新游戏 ]', 320, 330);
-}
-
-// 失败画面
-function drawGameOverScreen() {
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#ff2222';
-    ctx.font = 'bold 32px monospace';
-    ctx.fillText('你 倒 下 了', 320, 160);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px monospace';
-    ctx.fillText('不要妥协，保持你的决心...', 320, 220);
-    ctx.fillText('"Say my name... and stay determined."', 320, 250);
-
-    ctx.fillStyle = '#aaaaaa';
-    ctx.fillText('[ 按 Z / Enter 重新挑战 ]', 320, 320);
-}
-
-// ==================== 启动主循环 ====================
-function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
-</script>
+    <section id="touchControls" aria-label="触屏游戏控制">
+      <div class="dpad">
+        <button id="tbUp" class="control" type="button" data-key="up" aria-label="向上">&#9650;</button>
+        <button id="tbLeft" class="control" type="button" data-key="left" aria-label="向左">&#9664;</button>
+        <button id="tbRight" class="control" type="button" data-key="right" aria-label="向右">&#9654;</button>
+        <button id="tbDown" class="control" type="button" data-key="down" aria-label="向下">&#9660;</button>
+      </div>
+      <div class="actions">
+        <button id="tbX" class="control action" type="button" data-key="cancel" aria-label="取消">X</button>
+        <button id="tbC" class="control action" type="button" data-key="menu" aria-label="菜单">C</button>
+        <button id="tbZ" class="control action" type="button" data-key="confirm" aria-label="确认">Z</button>
+      </div>
+    </section>
+    <p class="sr-only">键盘使用方向键或 WASD 移动，Z 或 Enter 确认，X 或 Escape 取消，C 打开菜单。</p>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/battle_draw.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/overworld.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
