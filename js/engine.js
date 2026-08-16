@@ -222,7 +222,8 @@ class Menu {
 /* ========== 玩家状态 ========== */
 class Player {
   constructor() {
-    Object.assign(this, PLAYER_DEFAULT);
+    const { atk, def, ...base } = PLAYER_DEFAULT;
+    Object.assign(this, base);
     this.items = ["blue_meth", "chile_p", "coffee"];
     this.x = 320; this.y = 240;
     this.exp = 0; this.gold = 0;
@@ -266,6 +267,8 @@ class Player {
     try {
       const data = JSON.parse(raw);
       if (!data || typeof data !== "object") return false;
+      delete data.atk;
+      delete data.def;
       Object.assign(this, data);
       if (!Array.isArray(this.items)) this.items = [];
       if (!this.flags || typeof this.flags !== "object") this.flags = {};
