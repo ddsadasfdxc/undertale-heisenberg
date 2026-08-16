@@ -258,6 +258,7 @@ class Player {
   save() {
     const data = { name:this.name,lv:this.lv,hp:this.hp,maxhp:this.maxhp,
       exp:this.exp,gold:this.gold,items:this.items,kills:this.kills,spared:this.spared,flags:this.flags,
+      perk:this.perk||null,
       area:this.area||"desert",x:Number.isFinite(this.x)?this.x:320,y:Number.isFinite(this.y)?this.y:240 };
     localStorage.setItem("heisenberg_save", JSON.stringify(data));
   }

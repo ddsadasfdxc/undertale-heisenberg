@@ -1,11 +1,12 @@
 /* 传说之下：毒师宇宙 — 主入口 */
 const Game = {
   player: null, overworld: null,
-  state: "title", /* title, intro, overworld, gameover, ending */
+  state: "title", /* title, intro, overworld, gameover, ending, perkSelect, achievements */
   titleSel: 0,
-  titleOptions: ["开始游戏", "继续游戏", "关于"],
+  titleOptions: ["开始游戏", "继续游戏", "成就", "关于"],
   dialog: new DialogBox(),
-  introStep: 0,
+  perkPos: 0,
+  perkOptions: ["rising","hasted","laststand"],
   menu: new Menu(),
 
   init() {
@@ -39,6 +40,8 @@ const Game = {
     switch(this.state) {
       case "title": this.updateTitle(); this.drawTitle(Engine.ctx); break;
       case "intro": this.updateIntro(); this.drawIntro(Engine.ctx); break;
+      case "perkSelect": this.updatePerkSelect(); this.drawPerkSelect(Engine.ctx); break;
+      case "achievements": this.updateAchievements(); this.drawAchievements(Engine.ctx); break;
       case "overworld":
         if (this.overworld) {
           this.overworld.update();
@@ -57,20 +60,22 @@ const Game = {
       this.dialog.update();
       return;
     }
-    if (Engine.justPressed("up")) { this.titleSel = (this.titleSel + 2) % 3; AudioEngine.sfx("select"); }
-    if (Engine.justPressed("down")) { this.titleSel = (this.titleSel + 1) % 3; AudioEngine.sfx("select"); }
+    if (Engine.justPressed("up")) { this.titleSel = (this.titleSel + 3) % 4; AudioEngine.sfx("select"); }
+    if (Engine.justPressed("down")) { this.titleSel = (this.titleSel + 1) % 4; AudioEngine.sfx("select"); }
     if (Engine.justPressed("confirm")) {
       AudioEngine.sfx("confirm");
       if (this.titleSel === 0) {
         this.player = new Player();
-        this.state = "intro";
-        this.startIntro();
+        this.state = "perkSelect";
+        this.perkPos = 0;
       } else if (this.titleSel === 1) {
         if (this.player.load()) {
           this.startOverworld();
         } else {
           this.dialog.show(["没有找到存档。"]);
         }
+      } else if (this.titleSel === 2) {
+        this.state = "achievements";
       } else {
         this.dialog.show(["传说之下：毒师宇宙 " + GAME_VERSION,
           "非官方同人作品",
@@ -122,6 +127,112 @@ const Game = {
     ctx.fillText("按 Z / 点击确认 开始", 320, 460);
     ctx.textAlign = "left";
     this.dialog.draw(ctx);
+  },
+
+  /* ---- 天赋选择 ---- */
+  updatePerkSelect() {
+    if (Engine.justPressed("up")) { this.perkPos = (this.perkPos + 2) % 3; AudioEngine.sfx("select"); }
+    if (Engine.justPressed("down")) { this.perkPos = (this.perkPos + 1) % 3; AudioEngine.sfx("select"); }
+    if (Engine.justPressed("cancel")) { AudioEngine.sfx("cancel"); this.returnToTitle(); return; }
+    if (Engine.justPressed("confirm")) {
+      AudioEngine.sfx("confirm");
+      this.player.perk = this.perkOptions[this.perkPos];
+      this.player.save();
+      this.startIntro();
+    }
+  },
+
+  drawPerkSelect(ctx) {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, 640, 480);
+
+    ctx.fillStyle = "#FFD700";
+    ctx.font = "bold 24px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.fillText("选择开局天赋", 320, 70);
+    ctx.font = "14px 'Courier New'";
+    ctx.fillStyle = "#888";
+    ctx.fillText("★ 每次踏入荒漠，只能选择一种 ★", 320, 100);
+
+    this.perkOptions.forEach((id, i) => {
+      const p = PERKS[id];
+      const y = 150 + i * 100;
+      const sel = i === this.perkPos;
+
+      ctx.strokeStyle = sel ? "#FFF" : "#444";
+      ctx.lineWidth = sel ? 3 : 2;
+      ctx.strokeRect(90, y, 460, 80);
+      if (sel) { ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fillRect(90, y, 460, 80); }
+      if (i === this.perkPos) drawSoul(ctx, 70, y + 30, 3);
+
+      ctx.fillStyle = p.color;
+      ctx.font = "bold 20px 'Courier New'";
+      ctx.textAlign = "left";
+      ctx.fillText(p.name, 110, y + 28);
+
+      ctx.fillStyle = "#DDD";
+      ctx.font = "14px 'Courier New'";
+      p.desc.split("\n").forEach((ln, j) => {
+        ctx.fillText(ln, 110, y + 52 + j * 20);
+      });
+    });
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#888";
+    ctx.font = "12px 'Courier New'";
+    ctx.fillText("上下选择  Z确认  X返回", 320, 460);
+    ctx.textAlign = "left";
+  },
+
+  /* ---- 成就画廊 ---- */
+  updateAchievements() {
+    if (Engine.justPressed("confirm") || Engine.justPressed("cancel")) {
+      AudioEngine.sfx("cancel");
+      this.state = "title";
+    }
+  },
+
+  drawAchievements(ctx) {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, 640, 480);
+
+    ctx.fillStyle = "#FFD700";
+    ctx.font = "bold 24px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.fillText("—— 成就画廊 ——", 320, 60);
+    ctx.textAlign = "left";
+
+    let unlocked = [];
+    try { unlocked = JSON.parse(localStorage.getItem("heisenberg_achievements") || "[]"); }
+    catch(e) { unlocked = []; }
+    if (!Array.isArray(unlocked)) unlocked = [];
+
+    const ids = ["saul","jesse","gus","mike","gale","walt"];
+    ids.forEach((id, i) => {
+      const a = ACHIEVEMENTS[id];
+      const got = unlocked.includes(id);
+      const x = 60 + (i % 2) * 280;
+      const y = 110 + Math.floor(i / 2) * 80;
+
+      ctx.strokeStyle = got ? "#FFD700" : "#333";
+      ctx.lineWidth = got ? 2 : 1;
+      ctx.strokeRect(x, y, 240, 60);
+      if (!got) { ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.fillRect(x, y, 240, 60); }
+
+      ctx.fillStyle = got ? "#FFD700" : "#555";
+      ctx.font = "bold 16px 'Courier New'";
+      ctx.fillText(got ? "★ " + a.name : "???", x + 12, y + 24);
+      ctx.fillStyle = got ? "#CCC" : "#444";
+      ctx.font = "13px 'Courier New'";
+      ctx.fillText(got ? a.desc : "未解锁", x + 12, y + 46);
+    });
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#888";
+    ctx.font = "12px 'Courier New'";
+    ctx.fillText(`已解锁 ${unlocked.length} / ${ids.length}`, 320, 455);
+    ctx.fillText("按 Z 返回标题", 320, 475);
+    ctx.textAlign = "left";
   },
 
   /* ---- 开场 ---- */
