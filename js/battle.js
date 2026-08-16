@@ -9,7 +9,7 @@ class Battle {
     this.menuSel=0; this.actSel=0; this.itemSel=0;
     this.dialog = new DialogBox();
     this.dialog.show([this.char.battle_check]);
-    this.enemyHp=100; this.enemyMaxHp=100;
+    this.enemyHp=this.char.battle_hp||100; this.enemyMaxHp=this.enemyHp;
     this.atkBar = {active:false,pos:0,speed:8,hit:false,dmg:0};
     this.bullets=[];
     this.soulX=320; this.soulY=240; this.soulSpeed=4;

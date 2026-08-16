@@ -64,7 +64,7 @@ const CHARACTERS = {
     ],
     spare_text: "古斯塔沃轻轻叹了口气。\n「好吧... 你已经证明了自己。走吧。」",
     kill_text: "古斯塔沃的脸上还挂着微笑。\n「我们还会见面的...」",
-    spare_gold: 15, kill_exp: 25,
+    spare_gold: 15, kill_exp: 25, battle_hp: 75,
     attacks: ["fried_rain", "box_cutter", "pollos_orbit"]
   },
 
@@ -83,7 +83,7 @@ const CHARACTERS = {
     ],
     spare_text: "索尔竖起大拇指。\n「我就知道你是个聪明人！」",
     kill_text: "索尔的笑容消失了。\n「我会让律师联系你的律师...」",
-    spare_gold: 50, kill_exp: 5,
+    spare_gold: 50, kill_exp: 5, battle_hp: 50,
     attacks: ["card_rain", "inflatable"]
   },
 
@@ -100,7 +100,7 @@ const CHARACTERS = {
     science_response: ["杰西的眼睛亮了：「Yo！你也懂化学？！」", "杰西忘记了战斗！"],
     spare_text: "杰西挠了挠头。\n「好吧... 也许你不坏。我们可以做个朋友？」",
     kill_text: "杰西倒下了。\n「沃特先生... 我做到了吗...」",
-    spare_gold: 20, kill_exp: 40,
+    spare_gold: 20, kill_exp: 40, battle_hp: 65,
     attacks: ["blue_bounce", "capn_cook"]
   },
 
@@ -117,7 +117,7 @@ const CHARACTERS = {
     threat_response: ["你试图威胁麦克。", "麦克面无表情地看着你。", "「你最好别做半吊子的事。」"],
     spare_text: "麦克收起了枪。\n「走吧。别让我再看到你。」",
     kill_text: "麦克闭上了眼睛。\n「Kaylee... 爷爷爱你...」",
-    spare_gold: 40, kill_exp: 80,
+    spare_gold: 40, kill_exp: 80, battle_hp: 85,
     attacks: ["sniper_dot", "ricochet"]
   },
 
@@ -134,7 +134,7 @@ const CHARACTERS = {
     sing_response: ["你和盖尔合唱了《Major Tom》。", "盖尔忘记了战斗，沉浸在音乐中。"],
     spare_text: "盖尔擦了擦眼泪。\n「这是我经历过的最美好的战斗！」",
     kill_text: "盖尔的眼镜碎了。\n「我的咖啡... 还没冲完...」",
-    spare_gold: 30, kill_exp: 50,
+    spare_gold: 30, kill_exp: 50, battle_hp: 65,
     attacks: ["coffee_splash", "siphon_beam"]
   },
 
@@ -159,7 +159,7 @@ const CHARACTERS = {
     kneel_response: ["你跪下了。", "海森堡沉默了很久。", "「起来吧。你不该跪任何人。」"],
     spare_text: "海森堡摘下了帽子。\n「...你赢了。走吧。」",
     kill_text: "海森堡倒下了。帽子滚落到一边。\n「我记得... 我曾是个老师...」",
-    spare_gold: 100, kill_exp: 200,
+    spare_gold: 100, kill_exp: 200, battle_hp: 90,
     attacks: ["blue_storm", "hat_boomerang", "empire_crush"]
   }
 };
