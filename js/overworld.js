@@ -173,10 +173,12 @@ class Overworld {
     if (this.encounterTimer > this.encounterRate) {
       this.encounterTimer = 0;
       if (Math.random() < 0.3) {
-        /* 随机遭遇 */
-        const enemies = ["saul","jesse"];
-        const id = enemies[Math.floor(Math.random() * enemies.length)];
-        this.startBattle(id);
+        /* 随机遭遇：不重复出现已解决的剧情角色 */
+        const enemies = ["saul","jesse"].filter(id => !this.player.flags["resolved_" + id]);
+        if (enemies.length) {
+          const id = enemies[Math.floor(Math.random() * enemies.length)];
+          this.startBattle(id, true);
+        }
       }
     }
   }
