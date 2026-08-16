@@ -237,6 +237,8 @@ const Game = {
 
   /* ---- 开场 ---- */
   startIntro() {
+    this.state = "intro";
+    AudioEngine.playBGM("title");
     const lines = [
       "很久很久以前，地球由两个种族统治着：",
       "「化学家」和「毒师」。",
@@ -250,7 +252,6 @@ const Game = {
       "即将踏入这片被遗忘的土地。"
     ];
     this.dialog.show(lines, () => this.startOverworld());
-    AudioEngine.playBGM("title");
   },
 
   updateIntro() {
