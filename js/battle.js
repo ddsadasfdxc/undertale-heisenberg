@@ -19,6 +19,7 @@ class Battle {
     this.fx=""; this.fxT=0;
     this.flavorIdx=0; this.actCount=0;
     this.finished=false;
+    this.attackCount=0; /* 攻击次数（天赋结算用） */
     AudioEngine.playBGM("battle");
   }
 
@@ -137,10 +138,25 @@ class Battle {
       if(Engine.justPressed("confirm")){
         this.atkBar.hit=true;
         const acc=1-Math.abs(this.atkBar.pos-100)/100;
-        const dmg=Math.floor(this.player.atk*acc*(0.5+Math.random()*0.5));
-        this.atkBar.dmg=Math.max(1,dmg);
-        this.enemyHp-=this.atkBar.dmg;
-        this.fx=`造成 ${this.atkBar.dmg} 点伤害！`; this.fxT=90;
+        this.attackCount++;
+        let dmg=Math.floor(this.player.atk*acc*(0.5+Math.random()*0.5));
+        const perk=this.player.perk;
+        this.perkText="";
+        if(perk==="rising"){
+          const bonus=this.attackCount-1; /* 第1击+0，后面每击+1 */
+          dmg+=bonus;
+        } else if(perk==="hasted"){
+          if(this.attackCount%2===0){ dmg*=2; this.perkText="蓄势待发 ×2！"; }
+        } else if(perk==="laststand"){
+          const ratio=1-this.player.hp/this.player.maxhp; /* 0~1 */
+          const bonus=Math.floor(dmg*2*ratio);
+          dmg+=bonus;
+          if(bonus>0) this.perkText=`背水一战 +${bonus}！`;
+        }
+        dmg=Math.max(1,dmg);
+        this.atkBar.dmg=dmg;
+        this.enemyHp-=dmg;
+        this.fx=`造成 ${dmg} 点伤害！`; this.fxT=90;
         AudioEngine.sfx("hit");
         if(this.enemyHp<=0){this.enemyHp=0;this.phase="kill";this.kTimer=0;return;}
         setTimeout(()=>this.startEnemy(),500);
@@ -185,18 +201,121 @@ class Battle {
   }
 
   spawnBullet() {
-    const bx=this.box.x+Math.random()*this.box.w, by=this.box.y;
-    const sp=2+Math.random()*2;
-    switch(this.curAtk){
-      case"fried_rain":this.bullets.push({x:bx,y:by,vx:(Math.random()-.5)*2,vy:sp,r:6,color:"#FFD700",life:200});break;
-      case"blue_bounce":this.bullets.push({x:bx,y:by,vx:(Math.random()-.5)*3,vy:sp,r:8,color:"#0066FF",life:200});break;
-      case"card_rain":this.bullets.push({x:bx,y:by,vx:(Math.random()-.5)*1.5,vy:sp*.8,r:5,color:"#FFF",life:200});break;
-      case"sniper_dot":{
-        const dx=this.soulX-bx,dy=this.soulY-by,d=Math.sqrt(dx*dx+dy*dy)||1;
-        this.bullets.push({x:bx,y:by,vx:dx/d*3,vy:dy/d*3,r:4,color:"#F00",life:150});break;
+    const mode=this.curAtk;
+    const bx=this.box.x, by=this.box.y, cw=this.box.w, ch=this.box.h;
+    const push=b=>this.bullets.push(b);
+
+    switch(mode){
+      /* 古斯塔沃：炸鸡雨 + 餐盒轨道 + 微笑之光 */
+      case"fried_rain":
+        push({x:bx+Math.random()*cw, y:by, vx:(Math.random()-.5)*2, vy:2+Math.random()*2, r:6, color:"#FFD700", life:200});
+        break;
+      case"pollos_orbit": {
+        const cx=bx+cw/2, cy=by+ch/2;
+        const ang=this.atkTimer*0.05;
+        for(let k=0;k<3;k++){
+          const a=ang+k*Math.PI*2/3;
+          push({x:cx+Math.cos(a)*50, y:cy+Math.sin(a)*50, vx:Math.cos(a+Math.PI/2)*0.8, vy:Math.sin(a+Math.PI/2)*0.8, r:6, color:"#FFA500", life:140});
+        }
+        break;
       }
-      case"blue_storm":this.bullets.push({x:bx,y:by,vx:(Math.random()-.5)*4,vy:sp*1.2,r:7,color:"#0CF",life:200});break;
-      default:this.bullets.push({x:bx,y:by,vx:(Math.random()-.5)*2,vy:sp,r:6,color:"#FFF",life:200});
+      case"box_cutter": {
+        const side=this.atkTimer%120<60?0:1;
+        if(side===0) push({x:bx-10, y:by+10+((this.atkTimer*7)%(ch-20)), vx:4.5, vy:0, r:5, color:"#AAA", life:160});
+        else push({x:bx+cw+10, y:by+10+((this.atkTimer*7)%(ch-20)), vx:-4.5, vy:0, r:5, color:"#AAA", life:160});
+        break;
+      }
+
+      /* 索尔：名片雨 + 充气人 */
+      case"card_rain":
+        push({x:bx+Math.random()*cw, y:by, vx:(Math.random()-.5)*1.8, vy:1.6+Math.random()*1.4, r:5, color:"#FFF", life:200});
+        break;
+      case"inflatable":
+        push({x:bx+Math.random()*cw, y:by, vx:(Math.random()-.5)*0.7, vy:1.2, r:9, color:"#FF69B4", life:220});
+        break;
+
+      /* 杰西：蓝色弹跳 + 蓝色盐粒 */
+      case"blue_bounce": {
+        const y0=by+((this.atkTimer*11)%(ch-30));
+        push({x:bx+Math.random()*cw, y:y0, vx:(Math.random()-.5)*3, vy:1.6, r:9, color:"#0066FF", life:200});
+        break;
+      }
+      case"capn_cook": {
+        const n=6, cx=bx+cw/2, cy=by+ch/2;
+        for(let k=0;k<n;k++){
+          const a=(k/n)*Math.PI*2+this.atkTimer*0.03;
+          push({x:cx+Math.cos(a)*24, y:cy+Math.sin(a)*24, vx:Math.cos(a)*1.7, vy:Math.sin(a)*1.7, r:4, color:"#00BFFF", life:140});
+        }
+        break;
+      }
+
+      /* 麦克：狙击锁定 + 反弹弹 */
+      case"sniper_dot": {
+        const dx=this.soulX-(bx+cw/2), dy=this.soulY-(by+ch/2), d=Math.sqrt(dx*dx+dy*dy)||1;
+        push({x:bx+cw/2,y:by+ch/2,vx:dx/d*3.2,vy:dy/d*3.2,r:4,color:"#F44",life:150});
+        break;
+      }
+      case"ricochet": {
+        if(this.atkTimer%100===0){
+          push({x:bx+8,y:by+8,vx:2.6,vy:1.6,r:7,color:"#888",life:400,ricochet:true});
+        }
+        break;
+      }
+
+      /* 盖尔：咖啡泼溅 + 吸管光束 */
+      case"coffee_splash":
+        for(let k=0;k<2;k++)
+          push({x:bx+Math.random()*cw, y:by+Math.random()*ch*0.3, vx:(Math.random()-.5)*2.6, vy:1.6+Math.random()*1.8, r:5, color:"#8B5A2B", life:150});
+        break;
+      case"siphon_beam": {
+        const y0=by+((this.atkTimer*15)%(ch-20));
+        push({x:bx,y:y0,vx:3,vy:0,r:3,color:"#FF69B4",life:140});
+        break;
+      }
+
+      /* 海森堡：放射风暴 + 回旋帽 + 帝国崩落 */
+      case"blue_storm": {
+        const cx=this.soulX, cy=this.soulY;
+        for(let k=0;k<3;k++){
+          const a=Math.random()*Math.PI*2;
+          push({x:cx+Math.cos(a)*18,y:cy+Math.sin(a)*18,vx:Math.cos(a)*2.4,vy:Math.sin(a)*2.4,r:6,color:"#0CF",life:160});
+        }
+        break;
+      }
+      case"hat_boomerang": {
+        if(this.atkTimer%45===0){
+          push({x:bx+cw/2,y:by+ch/2,vx:4,vy:0,r:7,color:"#111",life:180,boomerang:true});
+        }
+        break;
+      }
+      case"empire_crush": {
+        const arr=[-1,0,1];
+        arr.forEach(off=>{
+          push({x:bx+cw/2+off*30, y:by-6, vx:off*0.4, vy:2.6, r:8, color:"#8B0000", life:180});
+        });
+        break;
+      }
+
+      default:
+        push({x:bx+Math.random()*cw, y:by, vx:(Math.random()-.5)*2, vy:2, r:6, color:"#FFF", life:200});
+    }
+
+    /* 弹幕通用行为：反射与回旋 */
+    if(this.atkTimer%3===0){
+      for(const b of this.bullets){
+        if(b.ricochet){
+          if(b.x<this.box.x){b.x=this.box.x;b.vx*=-1;}
+          if(b.x>this.box.x+this.box.w){b.x=this.box.x+this.box.w;b.vx*=-1;}
+          if(b.y<this.box.y){b.y=this.box.y;b.vy*=-1;}
+          if(b.y>this.box.y+this.box.h){b.y=this.box.y+this.box.h;b.vy*=-1;}
+        }
+        if(b.boomerang){
+          const cx=this.box.x+this.box.w/2, cy=this.box.y+this.box.h/2;
+          const dx=cx-b.x, dy=cy-b.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+          const pull=0.5;
+          b.x+=dx/d*pull; b.y+=dy/d*pull;
+        }
+      }
     }
   }
 
@@ -224,7 +343,22 @@ class Battle {
       this.player.kills++;
       const lv=this.player.addExp(this.char.kill_exp||10);
       this.player.gold+=this.char.spare_gold||10;
+      this.unlockAchievement();
       this.finish("kill",lv);
+    }
+  }
+
+  unlockAchievement() {
+    if(!ACHIEVEMENTS[this.char.id]) return;
+    const key="heisenberg_achievements";
+    let list=[];
+    try{ list=JSON.parse(localStorage.getItem(key)||"[]"); }catch(e){ list=[]; }
+    if(!Array.isArray(list)) list=[];
+    if(!list.includes(this.char.id)){
+      list.push(this.char.id);
+      try{ localStorage.setItem(key, JSON.stringify(list)); }catch(e){}
+      AudioEngine.sfx("ding");
+      this.fx=`成就解锁：${ACHIEVEMENTS[this.char.id].name}！`; this.fxT=180;
     }
   }
 

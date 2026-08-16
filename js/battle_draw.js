@@ -34,6 +34,12 @@ const BattleDraw = {
       ctx.fillText(b.fx,320,300); ctx.textAlign="left";
     }
 
+    /* 天赋触发提示 */
+    if(b.perkText&&b.phase!=="enemy"){
+      ctx.fillStyle="#0FF"; ctx.font="bold 16px 'Courier New'"; ctx.textAlign="center";
+      ctx.fillText(b.perkText,320,285); ctx.textAlign="left";
+    }
+
     /* 底部菜单 */
     if(b.phase==="menu"||b.phase==="act"||b.phase==="item") this.menu(b,ctx);
 

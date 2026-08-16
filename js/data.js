@@ -163,3 +163,32 @@ const CHARACTERS = {
     attacks: ["blue_storm", "hat_boomerang", "empire_crush"]
   }
 };
+
+/* ========== 肉鸽天赋 ========== */
+const PERKS = {
+  rising: {
+    name: "越战越勇",
+    desc: "连续攻击，伤害步步攀升。\n每多出一击，伤害额外提升。",
+    color: "#FF8C00"
+  },
+  hasted: {
+    name: "蓄势待发",
+    desc: "厚积薄发，奇正相生。\n第2、4、6……次攻击伤害翻倍。",
+    color: "#0CF"
+  },
+  laststand: {
+    name: "背水一战",
+    desc: "没有退路，才有力量。\n生命越低，造成的伤害越高。",
+    color: "#F44"
+  }
+};
+
+/* ========== 首领成就 ========== */
+const ACHIEVEMENTS = {
+  saul:  { name: "免费咨询已结束", desc: "击败索尔·古德曼" },
+  jesse: { name: "化学搭档之殇",   desc: "击败杰西·平克曼" },
+  gus:   { name: "微笑不倒",       desc: "击败古斯塔沃·弗林" },
+  mike:  { name: "不做半吊子",     desc: "击败麦克·厄曼特劳特" },
+  gale:  { name: "咖啡凉了",       desc: "击败盖尔·伯提切" },
+  walt:  { name: "帝国崩塌",       desc: "击败海森堡本尊" }
+};
